@@ -1,0 +1,47 @@
+# MegaLinter GitHub Action configuration file
+# More info at https://megalinter.io
+---
+name: MegaLinter
+
+# yamllint disable-line rule:truthy - false positive
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+
+    # Give the default GITHUB_TOKEN write permission to commit and push, comment
+    # issues & post new PR; remove the ones you do not need
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+
+      - name: MegaLinter
+        # kics-scan ignore-line
+
+        uses: oxsecurity/megalinter@v9
+        id: ml
+        env:
+          VALIDATE_ALL_CODEBASE: >-
+            ${{
+              github.event_name == 'push' &&
+              contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref)
+            }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISABLE: COPYPASTE,SPELL
