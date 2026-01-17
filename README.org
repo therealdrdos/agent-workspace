@@ -1,0 +1,50 @@
+#+TITLE: Agent Workspace Provider
+#+AUTHOR: DrDos
+
+Docker container for AI agent CLIs (Claude Code, Gemini CLI, Codex CLI).
+
+No ssh or host secrets configured. I want an isolated environment to run all the agents in yolo mode.
+
+* Usage
+Install first via install.sh script. Then you should be able to run =agent-workspace= globally. Run =agent-workspace build= once to build the docker image. Then, from any project directory you want, run =agent-workspace run= to get a shell inside your docker container with your pwd mounted to =/workspace=. Feel free to do everything you want there.
+
+You can start the pre-installed agents in yolo mode directly by running:
+- =$ agent-workspace run claude-yolo=
+- =$ agent-workspace run codex-yolo=
+- =$ agent-workspace run gemini-yolo=
+
+| Command     | Description                                  |
+|-------------+----------------------------------------------|
+| ~run [cmd]~ | Start container, run cmd (default: bash)     |
+| ~build~     | Build Docker image                           |
+| ~doctor~    | Run sanity checks                            |
+| ~attach~    | Attach to running container                  |
+| ~stop~      | Stop and remove container                    |
+| ~status~    | Show container status                        |
+| ~prune~     | Stop container, remove volumes, prune Docker |
+
+* Configuration
+Config location:
+- =~/.agent-w.conf= (default)
+- =$XDG_CONFIG_HOME/agent-workspace/agent-w.conf=
+
+See =agent-w.conf.example=.
+
+* Volumes
+| Volume        | Path              | Purpose          |
+|---------------+-------------------+------------------|
+| ~agent-home~  | =/home/dev=       | User config, auth |
+| ~agent-cache~ | =/home/dev/.cache= | npm cache        |
+
+Reset: ~docker volume rm agent-home~
+
+* Included in the container
+- bash, coreutils, curl, jq, ripgrep, less, sudo, git
+- Node.js 24.x
+- Claude Code, Gemini CLI, Codex CLI
+
+* Port forwarding
+Configurable in =agent-w.conf=. Default: 9000 bound to 127.0.0.1.
+
+* What the install script does
+It will create a symlink to the agent-workspace wrapper into your path as well as deploying the config file into your XDG_CONFIG_DIR. The install script asks for the relevant values to tailor the installation to your system.

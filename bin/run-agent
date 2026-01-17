@@ -1,0 +1,127 @@
+#!/bin/sh
+# Start or attach to container. Usage: run-agent [cmd]
+
+set -e
+
+IMAGE_NAME="agent-workspace"
+CONTAINER_NAME="agent-workspace"
+PORT_BIND_ADDRESS="127.0.0.1"
+PORTS="9000"
+VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [ -n "$XDG_CONFIG_HOME" ]; then
+    CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
+else
+    CONFIG_FILE="$HOME/.agent-w.conf"
+fi
+
+die() {
+    printf 'Error: %s\n' "$1" >&2
+    exit 1
+}
+
+[ -r "$CONFIG_FILE" ] || die "config not found: $CONFIG_FILE"
+
+# shellcheck source=/dev/null
+. "$CONFIG_FILE"
+
+[ -n "$AGENT_WORKSPACE_HOME" ] || die "AGENT_WORKSPACE_HOME not set in config"
+
+PROJECT_PATH="$(pwd)"
+
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)  echo "linux" ;;
+        Darwin*) echo "macos" ;;
+        *)       echo "unknown" ;;
+    esac
+}
+
+check_docker() {
+    command -v docker >/dev/null 2>&1 || die "docker not in PATH"
+    docker info >/dev/null 2>&1 || die "docker daemon not running"
+}
+
+build_if_needed() {
+    docker image inspect "$IMAGE_NAME" >/dev/null 2>&1 && return
+    printf 'Image "%s" not found. Building...\n' "$IMAGE_NAME"
+    "$SCRIPT_DIR/build-image" || die "build failed"
+}
+
+create_volumes() {
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *:*) vol=${mount%%:*} ;;
+            *)
+                printf 'Warning: invalid mount: %s\n' "$mount" >&2
+                continue
+                ;;
+        esac
+        [ -z "$vol" ] && continue
+        docker volume inspect "$vol" >/dev/null 2>&1 && continue
+        printf 'Creating volume: %s\n' "$vol"
+        docker volume create "$vol" >/dev/null
+    done
+}
+
+find_container() {
+    docker ps -q -f "name=^${CONTAINER_NAME}$" 2>/dev/null
+}
+
+start_container() {
+    container_id=$(find_container)
+
+    if [ -n "$container_id" ]; then
+        CONTAINER_ALREADY_RUNNING=1
+        return 0
+    fi
+
+    # remove stopped container if exists
+    if docker ps -aq -f "name=^${CONTAINER_NAME}$" | grep -q .; then
+        printf 'Removing stopped container...\n'
+        docker rm "$CONTAINER_NAME" >/dev/null
+    fi
+
+    printf 'Starting %s...\n' "$CONTAINER_NAME"
+
+    set -- docker run -d -t \
+        --name "$CONTAINER_NAME" \
+        --hostname agent-workspace \
+        -v "$PROJECT_PATH:/workspace"
+
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *:*) set -- "$@" -v "$mount" ;;
+        esac
+    done
+
+    for port in $PORTS; do
+        set -- "$@" -p "$PORT_BIND_ADDRESS:$port:$port"
+    done
+
+    if [ "$(detect_os)" = "linux" ]; then
+        set -- "$@" -e "HOST_UID=$(id -u)" -e "HOST_GID=$(id -g)"
+    fi
+
+    set -- "$@" "$IMAGE_NAME" sleep infinity
+    "$@" >/dev/null
+}
+
+main() {
+    check_docker
+    build_if_needed
+    create_volumes
+    start_container
+
+    [ "${CONTAINER_ALREADY_RUNNING:-}" = "1" ] && printf 'Attaching to %s...\n' "$CONTAINER_NAME"
+
+    if [ $# -eq 0 ]; then
+        exec docker exec -it -u dev -w /workspace "$CONTAINER_NAME" bash
+    else
+        exec docker exec -it -u dev -w /workspace "$CONTAINER_NAME" "$@"
+    fi
+}
+
+main "$@"

@@ -1,0 +1,142 @@
+#!/bin/sh
+# Usage: agent-workspace <command> [args...]
+
+set -e
+
+CONTAINER_NAME="agent-workspace"
+
+if [ -n "$XDG_CONFIG_HOME" ]; then
+    CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
+else
+    CONFIG_FILE="$HOME/.agent-w.conf"
+fi
+
+[ -r "$CONFIG_FILE" ] || { printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2; exit 1; }
+
+# shellcheck source=/dev/null
+. "$CONFIG_FILE"
+
+[ -n "$AGENT_WORKSPACE_HOME" ] || { printf 'Error: AGENT_WORKSPACE_HOME not set in config\n' >&2; exit 1; }
+
+SCRIPT_DIR="$AGENT_WORKSPACE_HOME"
+BIN_DIR="$SCRIPT_DIR/bin"
+
+usage() {
+    cat <<EOF
+Usage: agent-workspace <command> [args...]
+
+Commands:
+  run [args...]   Start container and run command (default: bash)
+  build           Build the Docker image
+  doctor          Run sanity checks
+  attach          Attach to running container
+  stop            Stop and remove container
+  status          Show container status
+  prune           Stop container and prune Docker
+  help            Show this help
+
+Examples:
+  agent-workspace run              # interactive shell
+  agent-workspace run claude       # run Claude Code
+  agent-workspace run claude-yolo  # Claude without prompts
+  agent-workspace attach           # connect to running container
+EOF
+}
+
+find_container() {
+    docker ps -q -f "name=^${CONTAINER_NAME}$" 2>/dev/null
+}
+
+cmd_run() {
+    exec "$BIN_DIR/run-agent" "$@"
+}
+
+cmd_build() {
+    exec "$BIN_DIR/build-image" "$@"
+}
+
+cmd_doctor() {
+    exec "$BIN_DIR/doctor" "$@"
+}
+
+cmd_attach() {
+    container_id=$(find_container)
+    if [ -n "$container_id" ]; then
+        printf 'Attaching to %s...\n' "$CONTAINER_NAME"
+        exec docker exec -it -u dev -w /workspace "$container_id" bash
+    else
+        printf 'No running container. Start with: agent-workspace run\n'
+        exit 1
+    fi
+}
+
+cmd_stop() {
+    container_id=$(find_container)
+    if [ -n "$container_id" ]; then
+        printf 'Stopping %s...\n' "$CONTAINER_NAME"
+        docker rm -f "$container_id" >/dev/null
+        printf 'Done.\n'
+    else
+        if docker ps -aq -f "name=^${CONTAINER_NAME}$" | grep -q .; then
+            printf 'Removing stopped container...\n'
+            docker rm "$CONTAINER_NAME" >/dev/null
+            printf 'Done.\n'
+        else
+            printf 'No container found.\n'
+        fi
+    fi
+}
+
+cmd_status() {
+    container_id=$(find_container)
+    if [ -n "$container_id" ]; then
+        printf 'Container %s running (ID: %s)\n' "$CONTAINER_NAME" "$container_id"
+        docker ps --filter "id=$container_id" --format "  Image:   {{.Image}}\n  Status:  {{.Status}}\n  Ports:   {{.Ports}}"
+    else
+        printf 'Container %s not running.\n' "$CONTAINER_NAME"
+    fi
+}
+
+cmd_prune() {
+    cmd_stop
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *:*)
+                vol=${mount%%:*}
+                if [ -n "$vol" ]; then
+                    docker volume rm "$vol" >/dev/null 2>&1 || true
+                fi
+                ;;
+        esac
+    done
+    printf 'Running docker system prune -a...\n'
+    docker system prune -a
+}
+
+main() {
+    if [ $# -eq 0 ]; then
+        usage
+        exit 0
+    fi
+
+    command="$1"
+    shift
+
+    case "$command" in
+        run)    cmd_run "$@" ;;
+        build)  cmd_build "$@" ;;
+        doctor) cmd_doctor "$@" ;;
+        attach) cmd_attach "$@" ;;
+        stop)   cmd_stop "$@" ;;
+        status) cmd_status "$@" ;;
+        prune)  cmd_prune "$@" ;;
+        help|--help|-h) usage; exit 0 ;;
+        *)
+            printf 'Unknown command: %s\n\n' "$command" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
