@@ -12,12 +12,18 @@ else
     CONFIG_FILE="$HOME/.agent-w.conf"
 fi
 
-[ -r "$CONFIG_FILE" ] || { printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2; exit 1; }
+[ -r "$CONFIG_FILE" ] || {
+    printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2
+    exit 1
+}
 
 # shellcheck source=/dev/null
 . "$CONFIG_FILE"
 
-[ -n "$AGENT_WORKSPACE_HOME" ] || { printf 'Error: AGENT_WORKSPACE_HOME not set in config\n' >&2; exit 1; }
+[ -n "$AGENT_WORKSPACE_HOME" ] || {
+    printf 'Error: AGENT_WORKSPACE_HOME not set in config\n' >&2
+    exit 1
+}
 
 if [ -t 1 ]; then
     GREEN='\033[0;32m'
@@ -79,9 +85,9 @@ check_volume() {
 check_os() {
     os="$(uname -s)"
     case "$os" in
-        Linux)  pass "OS: Linux" ;;
+        Linux) pass "OS: Linux" ;;
         Darwin) pass "OS: macOS" ;;
-        *)      warn "OS: $os (untested)" ;;
+        *) warn "OS: $os (untested)" ;;
     esac
 }
 
