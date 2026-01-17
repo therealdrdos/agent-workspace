@@ -1,0 +1,15 @@
+# agent-workspace configuration file
+
+AGENT_WORKSPACE_HOME="$HOME/OwnProgs/agent-workspace"
+
+IMAGE_NAME="agent-workspace"
+CONTAINER_NAME="agent-workspace"
+
+# Port forwarding (space-separated list of ports)
+# Set PORTS="" to disable forwarding.
+PORT_BIND_ADDRESS="127.0.0.1"
+PORTS="9000"
+
+# Volume mounts (space-separated name:path)
+# Volumes are created automatically from the left side of each mount.
+VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"

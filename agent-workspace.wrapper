@@ -1,0 +1,21 @@
+#!/bin/sh
+if [ -n "$XDG_CONFIG_HOME" ]; then
+    CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
+else
+    CONFIG_FILE="$HOME/.agent-w.conf"
+fi
+
+if [ ! -r "$CONFIG_FILE" ]; then
+    printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$CONFIG_FILE"
+
+if [ -z "$AGENT_WORKSPACE_HOME" ]; then
+    printf 'Error: AGENT_WORKSPACE_HOME is not set in config.\n' >&2
+    exit 1
+fi
+
+exec "$AGENT_WORKSPACE_HOME/agent-workspace" "$@"

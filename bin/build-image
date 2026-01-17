@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+
+IMAGE_NAME="agent-workspace"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+DOCKER_DIR="$REPO_DIR/docker"
+
+die() {
+    printf 'Error: %s\n' "$1" >&2
+    exit 1
+}
+
+if [ -n "$XDG_CONFIG_HOME" ]; then
+    CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
+else
+    CONFIG_FILE="$HOME/.agent-w.conf"
+fi
+
+[ -r "$CONFIG_FILE" ] || die "config not found: $CONFIG_FILE"
+
+# shellcheck source=/dev/null
+. "$CONFIG_FILE"
+
+[ -n "$AGENT_WORKSPACE_HOME" ] || die "AGENT_WORKSPACE_HOME not set in config"
+
+check_docker() {
+    command -v docker >/dev/null 2>&1 || die "docker not in PATH"
+    docker info >/dev/null 2>&1 || die "docker daemon not running"
+}
+
+build_image() {
+    printf 'Building %s from %s\n' "$IMAGE_NAME" "$DOCKER_DIR"
+    docker buildx build \
+        --tag "$IMAGE_NAME" \
+        --file "$DOCKER_DIR/Dockerfile" \
+        --load \
+        "$DOCKER_DIR"
+    printf 'Done: %s\n' "$IMAGE_NAME"
+}
+
+main() {
+    check_docker
+    build_image
+}
+
+main "$@"
