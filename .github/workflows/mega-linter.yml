@@ -34,7 +34,6 @@ jobs:
 
       - name: MegaLinter
         # kics-scan ignore-line
-
         uses: oxsecurity/megalinter@v9
         id: ml
         env:

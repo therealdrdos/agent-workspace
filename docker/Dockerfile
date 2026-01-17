@@ -1,7 +1,12 @@
+# checkov:skip=CKV_DOCKER_3:Container requires root to fix permissions at runtime (entrypoint)
+# trivy:ignore:AVD-DS-0002
+# kics-scan disable=fd54f200-402c-4333-a5a4-36ef6709af2f
 FROM node:24-bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# checkov:skip=CKV2_DOCKER_1:Sudo is needed for dev environment
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
@@ -16,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# hadolint ignore=DL3016
 RUN npm install -g \
     @anthropic-ai/claude-code \
     @google/gemini-cli \
@@ -41,6 +47,9 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /workspace
+
+# No need for a healthcheck
+HEALTHCHECK NONE
 
 # entrypoint may adjust UID/GID on Linux
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

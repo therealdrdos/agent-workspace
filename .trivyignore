@@ -1,0 +1,2 @@
+# Container requires root at runtime for UID/GID mapping in entrypoint
+AVD-DS-0002

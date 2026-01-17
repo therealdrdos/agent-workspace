@@ -14,12 +14,12 @@ MODE=""
 
 for arg in "$@"; do
     case "$arg" in
-        --run)      MODE="run" ;;
+        --run) MODE="run" ;;
         --uninstall) MODE="uninstall" ;;
-        --force)    FORCE=1 ;;
-        -y)         AUTO=1 ;;
+        --force) FORCE=1 ;;
+        -y) AUTO=1 ;;
         --no-prune) NO_PRUNE=1 ;;
-        --help|-h)  MODE="" ;;
+        --help | -h) MODE="" ;;
         *)
             printf 'Unknown option: %s\n\n' "$arg" >&2
             MODE=""
@@ -38,8 +38,14 @@ else
     CONF_DEST="$HOME/.agent-w.conf"
 fi
 
-[ -r "$WRAPPER_SRC" ] || { printf 'Error: missing wrapper: %s\n' "$WRAPPER_SRC" >&2; exit 1; }
-[ -r "$CONF_SRC" ] || { printf 'Error: missing config: %s\n' "$CONF_SRC" >&2; exit 1; }
+[ -r "$WRAPPER_SRC" ] || {
+    printf 'Error: missing wrapper: %s\n' "$WRAPPER_SRC" >&2
+    exit 1
+}
+[ -r "$CONF_SRC" ] || {
+    printf 'Error: missing config: %s\n' "$CONF_SRC" >&2
+    exit 1
+}
 
 usage() {
     cat <<EOF
@@ -65,13 +71,19 @@ check_mounts() {
     for mount in $1; do
         case "$mount" in
             *:*) ;;
-            *) printf 'Error: invalid mount: %s\n' "$mount" >&2; exit 1 ;;
+            *)
+                printf 'Error: invalid mount: %s\n' "$mount" >&2
+                exit 1
+                ;;
         esac
     done
 }
 
 need_tty() {
-    [ -t 0 ] || { printf 'Error: requires TTY\n' >&2; exit 1; }
+    [ -t 0 ] || {
+        printf 'Error: requires TTY\n' >&2
+        exit 1
+    }
 }
 
 do_install() {
@@ -91,12 +103,11 @@ do_install() {
         printf '\n'
         CONTAINER_NAME="$(prompt 'Docker container name' "$CONTAINER_NAME")"
         printf '\n'
-
-        printf 'Port bind address\n  1) 127.0.0.1 (default)\n  2) 0.0.0.0\n> '
+        printf 'Port bind address\n  1) 127.0.0.1 (default)\n  2) 0.0.0.0\n> ' # DevSkim: ignore DS162092
         read -r input
         case "$input" in
             2) PORT_BIND_ADDRESS="0.0.0.0" ;;
-            *) PORT_BIND_ADDRESS="127.0.0.1" ;;
+            *) PORT_BIND_ADDRESS="127.0.0.1" ;; # DevSkim: ignore DS162092
         esac
         printf '\n'
 
@@ -106,9 +117,18 @@ do_install() {
         printf '\n'
     fi
 
-    [ -z "$AGENT_WORKSPACE_HOME" ] && { printf 'Error: AGENT_WORKSPACE_HOME empty\n' >&2; exit 1; }
-    [ -z "$IMAGE_NAME" ] && { printf 'Error: IMAGE_NAME empty\n' >&2; exit 1; }
-    [ -z "$CONTAINER_NAME" ] && { printf 'Error: CONTAINER_NAME empty\n' >&2; exit 1; }
+    [ -z "$AGENT_WORKSPACE_HOME" ] && {
+        printf 'Error: AGENT_WORKSPACE_HOME empty\n' >&2
+        exit 1
+    }
+    [ -z "$IMAGE_NAME" ] && {
+        printf 'Error: IMAGE_NAME empty\n' >&2
+        exit 1
+    }
+    [ -z "$CONTAINER_NAME" ] && {
+        printf 'Error: CONTAINER_NAME empty\n' >&2
+        exit 1
+    }
     check_mounts "$VOLUME_MOUNTS"
 
     [ -x "$AGENT_WORKSPACE_HOME/agent-workspace" ] || {
@@ -125,7 +145,7 @@ do_install() {
     if [ -e "$CONF_DEST" ] && [ "$FORCE" -eq 0 ]; then
         printf 'Config exists: %s (use --force to overwrite)\n' "$CONF_DEST" >&2
     else
-        cat > "$CONF_DEST" <<EOF
+        cat >"$CONF_DEST" <<EOF
 # agent-workspace config
 
 AGENT_WORKSPACE_HOME="$AGENT_WORKSPACE_HOME"
@@ -147,12 +167,18 @@ EOF
 }
 
 do_uninstall() {
-    [ -r "$CONF_DEST" ] || { printf 'Error: config not found: %s\n' "$CONF_DEST" >&2; exit 1; }
+    [ -r "$CONF_DEST" ] || {
+        printf 'Error: config not found: %s\n' "$CONF_DEST" >&2
+        exit 1
+    }
 
     # shellcheck source=/dev/null
     . "$CONF_DEST"
 
-    [ -z "$AGENT_WORKSPACE_HOME" ] && { printf 'Error: AGENT_WORKSPACE_HOME not set\n' >&2; exit 1; }
+    [ -z "$AGENT_WORKSPACE_HOME" ] && {
+        printf 'Error: AGENT_WORKSPACE_HOME not set\n' >&2
+        exit 1
+    }
 
     [ -x "$AGENT_WORKSPACE_HOME/agent-workspace" ] && "$AGENT_WORKSPACE_HOME/agent-workspace" stop || true
 
@@ -178,9 +204,12 @@ do_uninstall() {
     printf 'Uninstalled.\n'
 }
 
-[ -z "$MODE" ] && { usage; exit 0; }
+[ -z "$MODE" ] && {
+    usage
+    exit 0
+}
 
 case "$MODE" in
-    run)       do_install ;;
+    run) do_install ;;
     uninstall) do_uninstall ;;
 esac

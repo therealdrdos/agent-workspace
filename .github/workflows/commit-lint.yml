@@ -1,6 +1,9 @@
 ---
 name: Commit Lint
 
+permissions:
+  contents: read
+
 # yamllint disable-line rule:truthy - false positive
 on:
   push:

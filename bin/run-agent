@@ -33,9 +33,9 @@ PROJECT_PATH="$(pwd)"
 
 detect_os() {
     case "$(uname -s)" in
-        Linux*)  echo "linux" ;;
+        Linux*) echo "linux" ;;
         Darwin*) echo "macos" ;;
-        *)       echo "unknown" ;;
+        *) echo "unknown" ;;
     esac
 }
 

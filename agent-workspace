@@ -11,12 +11,18 @@ else
     CONFIG_FILE="$HOME/.agent-w.conf"
 fi
 
-[ -r "$CONFIG_FILE" ] || { printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2; exit 1; }
+[ -r "$CONFIG_FILE" ] || {
+    printf 'Error: config not found: %s\n' "$CONFIG_FILE" >&2
+    exit 1
+}
 
 # shellcheck source=/dev/null
 . "$CONFIG_FILE"
 
-[ -n "$AGENT_WORKSPACE_HOME" ] || { printf 'Error: AGENT_WORKSPACE_HOME not set in config\n' >&2; exit 1; }
+[ -n "$AGENT_WORKSPACE_HOME" ] || {
+    printf 'Error: AGENT_WORKSPACE_HOME not set in config\n' >&2
+    exit 1
+}
 
 SCRIPT_DIR="$AGENT_WORKSPACE_HOME"
 BIN_DIR="$SCRIPT_DIR/bin"
@@ -123,14 +129,17 @@ main() {
     shift
 
     case "$command" in
-        run)    cmd_run "$@" ;;
-        build)  cmd_build "$@" ;;
+        run) cmd_run "$@" ;;
+        build) cmd_build "$@" ;;
         doctor) cmd_doctor "$@" ;;
         attach) cmd_attach "$@" ;;
-        stop)   cmd_stop "$@" ;;
+        stop) cmd_stop "$@" ;;
         status) cmd_status "$@" ;;
-        prune)  cmd_prune "$@" ;;
-        help|--help|-h) usage; exit 0 ;;
+        prune) cmd_prune "$@" ;;
+        help | --help | -h)
+            usage
+            exit 0
+            ;;
         *)
             printf 'Unknown command: %s\n\n' "$command" >&2
             usage >&2
