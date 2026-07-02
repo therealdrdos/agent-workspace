@@ -34,7 +34,7 @@ See =agent-w.conf.example=.
 | Volume        | Path              | Purpose          |
 |---------------+-------------------+------------------|
 | ~agent-home~  | =/home/dev=       | User config, auth |
-| ~agent-cache~ | =/home/dev/.cache= | npm cache        |
+| ~agent-cache~ | =/home/dev/.cache= | Tool caches      |
 
 Reset: ~docker volume rm agent-home~
 
