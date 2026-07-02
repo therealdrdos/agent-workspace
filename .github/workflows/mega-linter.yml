@@ -22,16 +22,12 @@ jobs:
     name: MegaLinter
     runs-on: ubuntu-latest
 
-    # Give the default GITHUB_TOKEN write permission to commit and push, comment
-    # issues & post new PR; remove the ones you do not need
     permissions:
       contents: read
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
 
       - name: MegaLinter
         # kics-scan ignore-line
