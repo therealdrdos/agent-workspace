@@ -13,3 +13,6 @@ PORTS="9000"
 # Volume mounts (space-separated name:path)
 # Volumes are created automatically from the left side of each mount.
 VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"
+
+# Where install.sh puts the wrapper (used by uninstall)
+WRAPPER_PATH="$HOME/.local/bin/agent-workspace"

@@ -1,4 +1,5 @@
 #!/bin/sh
+# agent-workspace wrapper
 if [ -n "$XDG_CONFIG_HOME" ]; then
     CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
 else

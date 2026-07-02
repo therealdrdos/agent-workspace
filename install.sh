@@ -90,6 +90,8 @@ do_install() {
     # shellcheck source=/dev/null
     . "$CONF_SRC"
 
+    WRAPPER_DEST="${WRAPPER_PATH:-$WRAPPER_DEST}"
+
     printf 'agent-workspace installer\n\n'
 
     if [ "$AUTO" -eq 0 ]; then
@@ -154,6 +156,7 @@ CONTAINER_NAME="$CONTAINER_NAME"
 PORT_BIND_ADDRESS="$PORT_BIND_ADDRESS"
 PORTS="$PORTS"
 VOLUME_MOUNTS="$VOLUME_MOUNTS"
+WRAPPER_PATH="$WRAPPER_DEST"
 EOF
     fi
 
@@ -192,6 +195,8 @@ do_uninstall() {
     done
 
     [ "$NO_PRUNE" -eq 0 ] && docker system prune -a
+
+    [ -n "${WRAPPER_PATH:-}" ] && [ -f "$WRAPPER_PATH" ] && rm -f "$WRAPPER_PATH"
 
     wrapper_path=$(command -v agent-workspace 2>/dev/null || true)
     if [ -n "$wrapper_path" ] && [ -f "$wrapper_path" ]; then
