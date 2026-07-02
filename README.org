@@ -17,11 +17,18 @@ You can start the pre-installed agents in yolo mode directly by running:
 |-------------+----------------------------------------------|
 | ~run [cmd]~ | Start container, run cmd (default: bash)     |
 | ~build~     | Build Docker image                           |
+| ~update~    | Rebuild image from scratch, keep volumes     |
+| ~cleanup~   | Remove cache volumes, keep agent-home        |
 | ~doctor~    | Run sanity checks                            |
 | ~attach~    | Attach to running container                  |
 | ~stop~      | Stop and remove container                    |
 | ~status~    | Show container status                        |
-| ~prune~     | Stop container, remove volumes, prune Docker |
+| ~prune~     | Remove container, volumes and image          |
+
+* Updating
+~agent-workspace update~ rebuilds the image with =--pull --no-cache=: fresh
+Debian base image, latest agent CLIs. Volumes stay, so logins and config
+survive.
 
 * Configuration
 Config location:
@@ -36,7 +43,7 @@ See =agent-w.conf.example=.
 | ~agent-home~  | =/home/dev=       | User config, auth |
 | ~agent-cache~ | =/home/dev/.cache= | Tool caches      |
 
-Reset: ~docker volume rm agent-home~
+Reset: ~agent-workspace cleanup~ (caches) or ~agent-workspace prune~ (everything)
 
 * Included in the container
 - bash, coreutils, curl, jq, ripgrep, less, sudo, git
