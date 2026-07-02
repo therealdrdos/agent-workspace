@@ -16,3 +16,6 @@ VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"
 
 # Where install.sh puts the wrapper (used by uninstall)
 WRAPPER_PATH="$HOME/.local/bin/agent-workspace"
+
+# Files (relative to /home/dev) that "cleanup" keeps
+# CLEANUP_KEEP=".claude/.credentials.json .claude.json .gemini/oauth_creds.json .gemini/google_accounts.json .codex/auth.json"
