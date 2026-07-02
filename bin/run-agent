@@ -31,6 +31,10 @@ die() {
 
 PROJECT_PATH="$(pwd)"
 
+case "$PROJECT_PATH" in
+    "$HOME" | /) die "refusing to mount $PROJECT_PATH as /workspace" ;;
+esac
+
 check_docker() {
     command -v docker >/dev/null 2>&1 || die "docker not in PATH"
     docker info >/dev/null 2>&1 || die "docker daemon not running"
