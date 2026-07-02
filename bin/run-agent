@@ -66,6 +66,14 @@ find_container() {
     docker ps -q -f "name=^${CONTAINER_NAME}$" 2>/dev/null
 }
 
+check_workspace() {
+    mounted=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$CONTAINER_NAME" 2>/dev/null)
+    if [ -n "$mounted" ] && [ "$mounted" != "$PROJECT_PATH" ]; then
+        printf 'Warning: /workspace is %s, not the current directory.\n' "$mounted" >&2
+        printf 'Run "agent-workspace stop" first to switch projects.\n' >&2
+    fi
+}
+
 start_container() {
     container_id=$(find_container)
 
@@ -110,7 +118,10 @@ main() {
     create_volumes
     start_container
 
-    [ "${CONTAINER_ALREADY_RUNNING:-}" = "1" ] && printf 'Attaching to %s...\n' "$CONTAINER_NAME"
+    if [ "${CONTAINER_ALREADY_RUNNING:-}" = "1" ]; then
+        printf 'Attaching to %s...\n' "$CONTAINER_NAME"
+        check_workspace
+    fi
 
     if [ $# -eq 0 ]; then
         exec docker exec -it -u dev -w /workspace "$CONTAINER_NAME" bash
