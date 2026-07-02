@@ -36,13 +36,14 @@ build_image() {
         --tag "$IMAGE_NAME" \
         --file "$DOCKER_DIR/Dockerfile" \
         --load \
+        "$@" \
         "$DOCKER_DIR"
     printf 'Done: %s\n' "$IMAGE_NAME"
 }
 
 main() {
     check_docker
-    build_image
+    build_image "$@"
 }
 
 main "$@"
