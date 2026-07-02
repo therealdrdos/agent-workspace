@@ -1,7 +1,7 @@
 # checkov:skip=CKV_DOCKER_3:Container requires root to fix permissions at runtime (entrypoint)
 # trivy:ignore:AVD-DS-0002
 # kics-scan disable=fd54f200-402c-4333-a5a4-36ef6709af2f
-FROM node:24-bookworm-slim
+FROM node:24-trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
