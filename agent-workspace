@@ -3,6 +3,7 @@
 
 set -e
 
+IMAGE_NAME="agent-workspace"
 CONTAINER_NAME="agent-workspace"
 
 if [ -n "$XDG_CONFIG_HOME" ]; then
@@ -33,7 +34,8 @@ Usage: agent-workspace <command> [args...]
 
 Commands:
   run [args...]   Start container and run command (default: bash)
-  build           Build the Docker image
+  build [args...] Build the Docker image (extra args go to docker build)
+  update          Rebuild image from scratch, keep volumes
   doctor          Run sanity checks
   attach          Attach to running container
   stop            Stop and remove container
@@ -59,6 +61,17 @@ cmd_run() {
 
 cmd_build() {
     exec "$BIN_DIR/build-image" "$@"
+}
+
+cmd_update() {
+    old_image=$(docker image inspect -f '{{.Id}}' "$IMAGE_NAME" 2>/dev/null || true)
+    cmd_stop
+    "$BIN_DIR/build-image" --pull --no-cache
+    new_image=$(docker image inspect -f '{{.Id}}' "$IMAGE_NAME" 2>/dev/null || true)
+    if [ -n "$old_image" ] && [ "$old_image" != "$new_image" ]; then
+        docker image rm "$old_image" >/dev/null 2>&1 || true
+    fi
+    printf 'Volumes kept. Start with: agent-workspace run\n'
 }
 
 cmd_doctor() {
@@ -131,6 +144,7 @@ main() {
     case "$command" in
         run) cmd_run "$@" ;;
         build) cmd_build "$@" ;;
+        update) cmd_update "$@" ;;
         doctor) cmd_doctor "$@" ;;
         attach) cmd_attach "$@" ;;
         stop) cmd_stop "$@" ;;
