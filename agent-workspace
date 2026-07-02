@@ -5,6 +5,7 @@ set -e
 
 IMAGE_NAME="agent-workspace"
 CONTAINER_NAME="agent-workspace"
+VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"
 
 if [ -n "$XDG_CONFIG_HOME" ]; then
     CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
@@ -36,6 +37,7 @@ Commands:
   run [args...]   Start container and run command (default: bash)
   build [args...] Build the Docker image (extra args go to docker build)
   update          Rebuild image from scratch, keep volumes
+  cleanup         Remove cache volumes, keep agent-home
   doctor          Run sanity checks
   attach          Attach to running container
   stop            Stop and remove container
@@ -72,6 +74,22 @@ cmd_update() {
         docker image rm "$old_image" >/dev/null 2>&1 || true
     fi
     printf 'Volumes kept. Start with: agent-workspace run\n'
+}
+
+cmd_cleanup() {
+    cmd_stop
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *:/home/dev) ;;
+            *:*)
+                vol=${mount%%:*}
+                if [ -n "$vol" ] && docker volume inspect "$vol" >/dev/null 2>&1; then
+                    printf 'Removing volume %s...\n' "$vol"
+                    docker volume rm "$vol" >/dev/null
+                fi
+                ;;
+        esac
+    done
 }
 
 cmd_doctor() {
@@ -145,6 +163,7 @@ main() {
         run) cmd_run "$@" ;;
         build) cmd_build "$@" ;;
         update) cmd_update "$@" ;;
+        cleanup) cmd_cleanup "$@" ;;
         doctor) cmd_doctor "$@" ;;
         attach) cmd_attach "$@" ;;
         stop) cmd_stop "$@" ;;
