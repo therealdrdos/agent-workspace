@@ -82,6 +82,25 @@ check_volume() {
     fi
 }
 
+check_mounts() {
+    bad=0
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *docker.sock* | */.ssh* | *.gitconfig*)
+                fail "Dangerous mount: $mount"
+                bad=1
+                ;;
+            /*)
+                warn "Host bind mount: $mount"
+                bad=1
+                ;;
+        esac
+    done
+    if [ "$bad" -eq 0 ]; then
+        pass "No dangerous mounts (docker.sock, .ssh, .gitconfig)"
+    fi
+}
+
 check_os() {
     os="$(uname -s)"
     case "$os" in
@@ -114,10 +133,11 @@ main() {
         esac
     done
 
-    pass "No dangerous mounts (docker.sock, .ssh, .gitconfig)"
+    check_mounts
 
     print_summary
     [ "$FAIL" -gt 0 ] && exit 1
+    exit 0
 }
 
 main "$@"
