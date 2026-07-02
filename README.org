@@ -18,7 +18,7 @@ You can start the pre-installed agents in yolo mode directly by running:
 | ~run [cmd]~ | Start container, run cmd (default: bash)     |
 | ~build~     | Build Docker image                           |
 | ~update~    | Rebuild image from scratch, keep volumes     |
-| ~cleanup~   | Remove cache volumes, keep agent-home        |
+| ~cleanup~   | Reset volumes, keep only auth files          |
 | ~doctor~    | Run sanity checks                            |
 | ~attach~    | Attach to running container                  |
 | ~stop~      | Stop and remove container                    |
@@ -29,6 +29,11 @@ You can start the pre-installed agents in yolo mode directly by running:
 ~agent-workspace update~ rebuilds the image with =--pull --no-cache=: fresh
 Debian base image, latest agent CLIs. Volumes stay, so logins and config
 survive.
+
+* Cleanup
+~agent-workspace cleanup~ wipes the volumes but keeps the logins: the
+credential files in =CLEANUP_KEEP= survive and =.claude.json= is reduced to
+its auth fields. Caches, shell history and per-project state are removed.
 
 * Configuration
 Config location:
