@@ -89,7 +89,7 @@ start_container() {
 
     printf 'Starting %s...\n' "$CONTAINER_NAME"
 
-    set -- docker run -d -t \
+    set -- docker run -d -t --init \
         --name "$CONTAINER_NAME" \
         --hostname agent-workspace \
         -v "$PROJECT_PATH:/workspace"
