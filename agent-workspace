@@ -6,6 +6,7 @@ set -e
 IMAGE_NAME="agent-workspace"
 CONTAINER_NAME="agent-workspace"
 VOLUME_MOUNTS="agent-home:/home/dev agent-cache:/home/dev/.cache"
+CLEANUP_KEEP=".claude/.credentials.json .claude.json .gemini/oauth_creds.json .gemini/google_accounts.json .codex/auth.json"
 
 if [ -n "$XDG_CONFIG_HOME" ]; then
     CONFIG_FILE="$XDG_CONFIG_HOME/agent-workspace/agent-w.conf"
@@ -37,7 +38,7 @@ Commands:
   run [args...]   Start container and run command (default: bash)
   build [args...] Build the Docker image (extra args go to docker build)
   update          Rebuild image from scratch, keep volumes
-  cleanup         Remove cache volumes, keep agent-home
+  cleanup         Reset volumes, keep only auth files
   doctor          Run sanity checks
   attach          Attach to running container
   stop            Stop and remove container
@@ -76,8 +77,55 @@ cmd_update() {
     printf 'Volumes kept. Start with: agent-workspace run\n'
 }
 
+# wipe in place, credentials never touch the host
+clean_home() {
+    home_vol=""
+    for mount in $VOLUME_MOUNTS; do
+        case "$mount" in
+            *:/home/dev) home_vol=${mount%%:*} ;;
+        esac
+    done
+    [ -n "$home_vol" ] || return 0
+    docker volume inspect "$home_vol" >/dev/null 2>&1 || return 0
+    if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+        printf 'Image "%s" not found, skipping home cleanup\n' "$IMAGE_NAME"
+        return 0
+    fi
+
+    printf 'Cleaning %s, keeping: %s\n' "$home_vol" "$CLEANUP_KEEP"
+
+    set --
+    if [ "$(uname -s)" = "Linux" ]; then
+        set -- -e "HOST_UID=$(id -u)" -e "HOST_GID=$(id -g)"
+    fi
+
+    docker run --rm -i "$@" \
+        -e "KEEP=$CLEANUP_KEEP" \
+        -v "$home_vol:/home/dev" \
+        "$IMAGE_NAME" sh -s <<'EOF'
+set -e
+cd /home/dev
+mkdir -p /tmp/keep
+for f in $KEEP; do
+    [ -f "$f" ] || continue
+    mkdir -p "/tmp/keep/$(dirname "$f")"
+    cp -p "$f" "/tmp/keep/$f"
+done
+if [ -f /tmp/keep/.claude.json ]; then
+    jq 'with_entries(select(.key == "oauthAccount" or .key == "userID" or .key == "hasCompletedOnboarding"))' \
+        /tmp/keep/.claude.json >/tmp/keep/.claude.json.min &&
+        mv /tmp/keep/.claude.json.min /tmp/keep/.claude.json
+fi
+find /home/dev -mindepth 1 -delete
+mkdir -p .config .cache .local
+cp /etc/skel/.bashrc /etc/skel/.profile . 2>/dev/null || true
+cp -a /tmp/keep/. /home/dev/
+EOF
+}
+
 cmd_cleanup() {
     cmd_stop
+    clean_home
     for mount in $VOLUME_MOUNTS; do
         case "$mount" in
             *:/home/dev) ;;
