@@ -3,3 +3,11 @@ FLAVOR_SUGGESTIONS: false
 BASH_SHFMT_ARGUMENTS: "-i 4 -ci"
 
 REPOSITORY_KICS_CONFIG_FILE: kics.config
+
+# no lockfiles or manifests in this repo
+DISABLE_LINTERS:
+  - REPOSITORY_OSV_SCANNER
+
+# zizmor needs the token for its online audits
+ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
+  - GITHUB_TOKEN
