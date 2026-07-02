@@ -5,6 +5,8 @@ name: MegaLinter
 # yamllint disable-line rule:truthy - false positive
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
