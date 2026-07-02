@@ -30,7 +30,9 @@ if [ "$(id -u)" = "0" ]; then
         usermod -u "$TARGET_UID" dev 2>/dev/null || true
     fi
 
-    chown -R dev:dev /home/dev 2>/dev/null || true
+    if [ "$(stat -c %u:%g /home/dev)" != "$TARGET_UID:$TARGET_GID" ]; then
+        chown -R dev:dev /home/dev 2>/dev/null || true
+    fi
 
     # runuser preserves arguments without shell quoting issues
     cd /workspace
