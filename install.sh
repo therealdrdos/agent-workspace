@@ -57,7 +57,7 @@ Usage:
 Options:
   -y         Use defaults, no prompts
   --force    Overwrite existing config
-  --no-prune Skip docker system prune
+  --no-prune Keep the docker image
 EOF
 }
 
@@ -194,7 +194,9 @@ do_uninstall() {
         esac
     done
 
-    [ "$NO_PRUNE" -eq 0 ] && docker system prune -a
+    if [ "$NO_PRUNE" -eq 0 ]; then
+        docker image rm "${IMAGE_NAME:-agent-workspace}" >/dev/null 2>&1 || true
+    fi
 
     [ -n "${WRAPPER_PATH:-}" ] && [ -f "$WRAPPER_PATH" ] && rm -f "$WRAPPER_PATH"
 

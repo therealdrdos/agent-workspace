@@ -42,7 +42,7 @@ Commands:
   attach          Attach to running container
   stop            Stop and remove container
   status          Show container status
-  prune           Stop container and prune Docker
+  prune           Remove container, volumes and image
   help            Show this help
 
 Examples:
@@ -135,6 +135,16 @@ cmd_status() {
 }
 
 cmd_prune() {
+    printf 'This removes the container, all volumes (auth included) and the image.\n'
+    printf 'Continue? [y/N] '
+    read -r answer
+    case "$answer" in
+        y | Y) ;;
+        *)
+            printf 'Aborted.\n'
+            exit 1
+            ;;
+    esac
     cmd_stop
     for mount in $VOLUME_MOUNTS; do
         case "$mount" in
@@ -146,8 +156,8 @@ cmd_prune() {
                 ;;
         esac
     done
-    printf 'Running docker system prune -a...\n'
-    docker system prune -a
+    docker image rm "$IMAGE_NAME" >/dev/null 2>&1 || true
+    printf 'Done.\n'
 }
 
 main() {
